@@ -24,6 +24,17 @@
  *   $("#mydiv").clock({"langSet":"en","format":"24"}); >> will have military style 24 hour format
  *   $("#mydiv").clock({"calendar":true}); >> will include the date with the time, and will update the date at midnight
  *         
+ *
+ * Changes by Christoph Ambichl (chrisvanhill@gmail.com):
+ *
+ * Added a timer callback that triggers a function when the time is reached.
+ * You can pass the "timer" options at clock creation consisting of
+ * time/function pairs. The time key is a string formated as "hh:mm".
+ * The function value is the function to be called without ()!
+ *
+ * Example:
+ *  $("#mydiv").clock({ "00:00": loadNewDay,
+ *                      "11:11": startCarnival });
  */
 
 (function($, undefined) {
@@ -61,22 +72,6 @@ $.fn.clock = function(options) {
   }
 
   return this.each(function(){
-    $.extend(locale,$.clock.locale);
-    options = options || {};  
-    options.timestamp = options.timestamp || "systime";
-    systimestamp = new Date();
-    systimestamp = systimestamp.getTime();
-    options.sysdiff = 0;
-    if(options.timestamp!="systime"){
-      mytimestamp = new Date(options.timestamp);
-      options.sysdiff = options.timestamp - systimestamp;
-    }
-    options.langSet = options.langSet || "en";
-    options.format = options.format || ((options.langSet!="en") ? "24" : "12");
-    options.calendar = options.calendar || "true";
-
-    if (!$(this).hasClass("jqclock")){$(this).addClass("jqclock");}
-
     var addleadingzero = function(i){
       if (i<10){i="0" + i;}
       return i;    
@@ -99,6 +94,10 @@ $.fn.clock = function(options) {
         ap="",
         calend="";
 
+        // every first second of a minute check if there is a timer and 
+        // execute its callback.
+        if(s == 0 && timers[h] && timers[h][m]) { timers[h][m](); }
+
         if(myoptions.format=="12"){
           ap=" AM";
           if (h > 11) { ap = " PM"; }
@@ -120,11 +119,46 @@ $.fn.clock = function(options) {
           }
         }
         $(el).html(calend+"<span class='clocktime'>"+h+":"+m+":"+s+ap+"</span>");
+
         t[el_id] = setTimeout(function() { updateClock( $(el),myoptions ) }, 1000);
       }
 
+    },
+
+    // create a hash of timer functions that are identified by hour and minute
+    // the hash looks as follows:
+    // { h1: { m1: function, m2: function, ... }, h2: {}, ... }
+    prepareTimer = function(timers) {
+      h = {}
+      for(var t in timers) {
+        hm = t.split(":");
+        if(hm.length == 2) {
+          hour = parseInt(hm[0]);
+          min  = parseInt(hm[1]);
+          if(!h[hour]) { h[hour] = {}; }
+          h[hour][min] = timers[t];
+        }
+      }
+      return h;
     }
-      
+
+    $.extend(locale,$.clock.locale);
+    options = options || {};  
+    options.timestamp = options.timestamp || "systime";
+    systimestamp = new Date();
+    systimestamp = systimestamp.getTime();
+    options.sysdiff = 0;
+    if(options.timestamp!="systime"){
+      mytimestamp = new Date(options.timestamp);
+      options.sysdiff = options.timestamp - systimestamp;
+    }
+    options.langSet = options.langSet || "en";
+    options.format = options.format || ((options.langSet!="en") ? "24" : "12");
+    options.calendar = options.calendar || "true";
+
+    if (!$(this).hasClass("jqclock")){$(this).addClass("jqclock");}
+
+    var timers = options.timer ? prepareTimer(options.timer) : null;
     updateClock($(this),options);
   });
 }
