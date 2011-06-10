@@ -53,3 +53,15 @@ It would be interesting to call an ntp timeserver and start clock with ntp's tim
 Includes a handler to stop the clock, just pass "destroy".
 
 $("div#clock").clock("destroy");
+
+
+Changes by Christoph Ambichl (chrisvanhill@gmail.com):
+
+Added a timer callback that triggers a function when the time is reached.
+You can pass the "timer" options at clock creation consisting of
+time/function pairs. The time key is a string formated as "hh:mm".
+The function value is the function to be called without ()!
+
+Example:
+ $("#mydiv").clock({ "00:00": loadNewDay,
+                     "11:11": startCarnival });
