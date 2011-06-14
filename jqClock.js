@@ -33,8 +33,8 @@
  * The function value is the function to be called without ()!
  *
  * Example:
- *  $("#mydiv").clock({ "00:00": loadNewDay,
- *                      "11:11": startCarnival });
+ *  $("#mydiv").clock({ timer: { "00:00": loadNewDay,
+ *                               "11:11": startCarnival } });
  */
 
 (function($, undefined) {
